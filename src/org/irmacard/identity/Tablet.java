@@ -19,31 +19,29 @@ public class Tablet {
     IdemixService service;
     IDreader id;
     CardTerminal t;
-    final byte[] serverPublicKey = {};
-    byte[] sessionKey;
     Crypto crypto;
-    CardTerminals terminalList;
 
     /**
      * Create a new Tablet and initialize variables
      */
-    public Tablet() throws CardException {
+    public Tablet() {
         this.crypto = new Crypto();
         this.id = new IDreader();
-        TerminalFactory tf = TerminalFactory.getDefault();
-        this.terminalList = tf.terminals();
-        this.t = terminalList.list().get(0);
-        this.sessionKey = new byte[CONSTANTS.BUFFER_SIZE];
-    }
-
-    private void start() throws IDVerificationException {
-        Scanner scan = new Scanner(System.in);
+        CardTerminals terminalList = TerminalFactory.getDefault().terminals();
         try {
-            System.out.printf("Terminal List: %s\nSelected Terminal: %s\n", terminalList.list(), t);
+            this.t = terminalList.list().get(0);
         } catch (CardException e) {
-            System.out.printf("Could not find a suitable terminal. Please make sure it is connected and try again.");
+            System.out.println("Could not select the correct terminal.");
+            e.printStackTrace();
+        } catch (IndexOutOfBoundsException e) {
+            System.out.println("No terminals were detected. Are you sure it is connected?");
             e.printStackTrace();
         }
+    }
+
+    private void start() {
+        Scanner scan = new Scanner(System.in);
+        System.out.printf("Terminal List: %s\n", t);
         System.out.print("Are we connecting to an ID (1) or an IRMA card (2)? ");
         int type = scan.nextInt();
 
@@ -53,12 +51,13 @@ public class Tablet {
                 if (id.verifyIntegrity())
                     System.out.println("Everything checks out. Your ID is genuine.");
                 else
-                    throw new IDVerificationException("Your ID couldn't be verified. It might have been tampered with.");
+                    System.out.println("Your ID couldn't be verified. It might have been tampered with.");
                 break;
             case 2:
                 System.out.println("Please keep your IRMA card against the terminal, or insert it.");
-                awaitConnection(30000);
-                generateSessionKey();
+                if (awaitConnection(30000)) {
+                    generateSessionKey();
+                }
                 break;
             default:
                 System.out.println("Unsupported operation, please try again.");
@@ -82,10 +81,10 @@ public class Tablet {
         try {
             if (!t.waitForCardPresent(timeout)) {
                 System.out.println("No IRMA card was detected in the allotted time.");
-                return true;
+                return false;
             } else {
                 System.out.println("Card detected, continuing.");
-                return false;
+                return true;
             }
         } catch (IllegalArgumentException e) {
             System.out.println("Timeout value must not be negative.");
@@ -101,12 +100,8 @@ public class Tablet {
         crypto.generateSessionKey();
     }
 
-    private void clearBuffers() {
-        java.util.Arrays.fill(sessionKey, (byte) 0);
-    }
-
     private void reset() {
-        clearBuffers();
+        crypto.reset();
     }
 
     public RSAPublicKey getPublicKey() {
@@ -114,13 +109,7 @@ public class Tablet {
     }
 
     public static void main(String[] args) {
-        try {
-            Tablet t = new Tablet();
-            t.start();
-        } catch (CardException e) {
-            e.printStackTrace();
-        } catch (IDVerificationException e) {
-            e.printStackTrace();
-        }
+        Tablet t = new Tablet();
+        t.start();
     }
 }

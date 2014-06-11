@@ -1,13 +1,15 @@
 package org.irmacard.identity;
 
+import org.bouncycastle.jcajce.provider.digest.SHA1;
+
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.DHGenParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -20,6 +22,8 @@ public class Crypto {
     RSAPublicKey pkS;
     RSAPublicKey pkT;
     SecureRandom sr;
+    SecretKey session_key;
+    final byte[] serverPublicKey = {};
 
     public Crypto() {
         this.sr = new SecureRandom();
@@ -31,26 +35,30 @@ public class Crypto {
     }
 
     public void generateSessionKey() {
-        byte[] key = new byte[16];
-        byte[] iv = new byte[16];
+        System.out.println("Starting AES session key generation.");
+        System.out.printf("List of available security providers: %s\n", (Object[]) Security.getProviders());
 
-        this.sr.nextBytes(key);
-        sr.nextBytes(iv);
         try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key,"AES"), new IvParameterSpec(iv));
+            KeyGenerator keygen = KeyGenerator.getInstance("AES");
+            keygen.init(256, sr);
+            session_key = keygen.generateKey();
+            System.out.printf("Session key generated successfully: %s\n", session_key.toString());
         } catch (NoSuchAlgorithmException e) {
+            System.out.println("The specified algorithm does not exist.");
             e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
+        } catch (InvalidParameterException e) {
+            System.out.println("You have specified an incorrect parameter.");
             e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
+        } catch (NullPointerException e) {
             e.printStackTrace();
         }
     }
 
     public RSAPublicKey getPublicKey() {
         return pkT;
+    }
+
+    protected void reset() {
+        session_key = null;
     }
 }
