@@ -1,14 +1,9 @@
 package org.irmacard.identity;
 
-import org.bouncycastle.jcajce.provider.digest.SHA1;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.DHGenParameterSpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -30,19 +25,19 @@ public class Crypto {
     }
 
     public byte[] encrypt(byte[] data) {
-        byte[] encryptedData = new byte[CONSTANTS.BUFFER_SIZE];
-        return encryptedData;
+        return new byte[CONSTANTS.BUFFER_SIZE];
     }
 
     public void generateSessionKey() {
-        System.out.println("Starting AES session key generation.");
-        System.out.printf("List of available security providers: %s\n", (Object[]) Security.getProviders());
-
         try {
-            KeyGenerator keygen = KeyGenerator.getInstance("AES");
+            System.out.println("Starting AES session key generation.");
+
+            Security.addProvider(new BouncyCastleProvider());
+            KeyGenerator keygen = KeyGenerator.getInstance("AES", "BC");
             keygen.init(256, sr);
             session_key = keygen.generateKey();
-            System.out.printf("Session key generated successfully: %s\n", session_key.toString());
+
+            System.out.println("Session key generated successfully.");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("The specified algorithm does not exist.");
             e.printStackTrace();
@@ -50,6 +45,9 @@ public class Crypto {
             System.out.println("You have specified an incorrect parameter.");
             e.printStackTrace();
         } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            System.out.println("The Bouncy Castle security provider is not installed. Aborting.");
             e.printStackTrace();
         }
     }

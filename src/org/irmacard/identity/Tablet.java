@@ -3,10 +3,7 @@ package org.irmacard.identity;
 
 import org.irmacard.idemix.*;
 
-import javax.smartcardio.CardException;
-import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CardTerminals;
-import javax.smartcardio.TerminalFactory;
+import javax.smartcardio.*;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Scanner;
 
@@ -41,7 +38,7 @@ public class Tablet {
 
     private void start() {
         Scanner scan = new Scanner(System.in);
-        System.out.printf("Terminal List: %s\n", t);
+        System.out.printf("Available terminals: %s\n", t);
         System.out.print("Are we connecting to an ID (1) or an IRMA card (2)? ");
         int type = scan.nextInt();
 
