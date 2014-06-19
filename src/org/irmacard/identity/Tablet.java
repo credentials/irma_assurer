@@ -56,6 +56,7 @@ public class Tablet {
                 System.out.println("Please keep your IRMA card against the terminal, or insert it.");
                 if (awaitConnection(30000)) {
                     generateSessionKey();
+                    System.out.print(Formatter.toHexString(terminalService.getATR()));
                 }
                 break;
             case 3:
