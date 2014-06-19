@@ -1,10 +1,11 @@
 
 package org.irmacard.identity;
 
-import org.irmacard.idemix.*;
+import net.sourceforge.scuba.smartcards.*;
 
 import javax.smartcardio.*;
 import java.security.interfaces.RSAPublicKey;
+
 import java.util.Scanner;
 
 
@@ -13,9 +14,8 @@ import java.util.Scanner;
  * @author Geert Smelt
  */
 public class Tablet {
-    IdemixService service;
     IDreader id;
-    CardTerminal t;
+    TerminalCardService terminalService;
     Crypto crypto;
 
     /**
@@ -26,7 +26,7 @@ public class Tablet {
         this.id = new IDreader();
         CardTerminals terminalList = TerminalFactory.getDefault().terminals();
         try {
-            this.t = terminalList.list().get(0);
+            this.terminalService = new TerminalCardService(terminalList.list().get(0));
         } catch (CardException e) {
             System.out.println("Could not select the correct terminal.");
             e.printStackTrace();
@@ -38,15 +38,17 @@ public class Tablet {
 
     private void start() {
         Scanner scan = new Scanner(System.in);
-        System.out.printf("Available terminals: %s\n", t);
-        System.out.print("Are we connecting to an ID (1) or an IRMA card (2)? ");
+        System.out.printf("Using terminal '%s'\n", this.terminalService.getTerminal());
+        System.out.print("Do you wish to read an ID (1), an IRMA card (2) or abort (3)? ");
         int type = scan.nextInt();
 
         switch (type) {
             case 1:
                 System.out.println("Please keep your passport or ID card against the terminal.");
-                if (id.verifyIntegrity())
+                if (id.verifyIntegrity()) {
                     System.out.println("Everything checks out. Your ID is genuine.");
+                    id.storePassportData();
+                }
                 else
                     System.out.println("Your ID couldn't be verified. It might have been tampered with.");
                 break;
@@ -55,6 +57,10 @@ public class Tablet {
                 if (awaitConnection(30000)) {
                     generateSessionKey();
                 }
+                break;
+            case 3:
+                System.out.println("Resetting buffers and quitting.");
+                reset();
                 break;
             default:
                 System.out.println("Unsupported operation, please try again.");
@@ -76,12 +82,13 @@ public class Tablet {
      */
     private boolean awaitConnection(long timeout) {
         try {
-            if (!t.waitForCardPresent(timeout)) {
+            if (!terminalService.getTerminal().waitForCardPresent(timeout)) {
                 System.out.println("No IRMA card was detected in the allotted time.");
                 return false;
             } else {
                 System.out.println("Card detected, continuing.");
-                return true;
+                terminalService.open();
+                return terminalService.isOpen();
             }
         } catch (IllegalArgumentException e) {
             System.out.println("Timeout value must not be negative.");
@@ -89,6 +96,9 @@ public class Tablet {
         } catch (CardException e) {
             System.out.println("An unexpected error occurred.");
             e.printStackTrace();
+        } catch (CardServiceException e) {
+            e.printStackTrace();
+            return false;
         }
         return false;
     }
