@@ -19,6 +19,9 @@ public class Tablet {
     TerminalCardService terminalService;
     Crypto crypto;
 
+    final int CHIP_TYPE_IRMA = 1;
+    final int CHIP_TYPE_ID = 2;
+
     /**
      * Create a new Tablet and initialize variables
      */
@@ -37,25 +40,26 @@ public class Tablet {
         }
     }
 
+    /**
+     * This is the backbone of the tablet's functionality. This method determines which actions to perform.
+     */
     private void start() {
         System.out.printf("Using terminal '%s'\n", this.terminalService.getTerminal());
-        System.out.print("Do you wish to read an ID (1), an IRMA card (2) or abort (3)? ");
+        System.out.println("Please keep your card or identity document against the terminal.");
+        System.out.printf("Is this an IRMA card (%d) or an identity document (%d)? ", CHIP_TYPE_IRMA, CHIP_TYPE_ID);
         if (awaitConnection()) {
             switch (new Scanner(System.in).nextInt()) {
-                case 1:
-                    if (id.verifyIntegrity()) {
-                        System.out.println("Everything checks out. Your ID is genuine.");
-                        id.storePassportData();
-                    } else
-                        System.out.println("Your ID couldn't be verified. It might have been tampered with.");
-                    break;
-                case 2:
+                case CHIP_TYPE_IRMA:
                     generateSessionKey();
                     System.out.print(Formatter.toHexString(terminalService.getATR()));
                     break;
-                case 3:
-                    System.out.println("Resetting buffers and quitting.");
-                    reset();
+                case CHIP_TYPE_ID:
+                    try {
+                        id.verifyIntegrity();
+                        id.storePassportData();
+                    } catch (IDVerificationException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 default:
                     System.out.println("Unsupported operation, please try again.");
@@ -85,7 +89,6 @@ public class Tablet {
                 System.out.println("No IRMA card was detected in the allotted time.");
                 return false;
             } else {
-                System.out.println("Card detected, continuing.");
                 terminalService.open();
                 return terminalService.isOpen();
             }

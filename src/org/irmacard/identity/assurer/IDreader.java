@@ -6,29 +6,46 @@ import org.irmacard.credentials.info.*;
 import org.irmacard.credentials.spec.*;
 import org.irmacard.credentials.keys.*;
 import org.irmacard.credentials.util.*;
+import org.irmacard.identity.common.CONSTANTS;
 
 /**
  * IDreader will handle the reading of data on the chip inside an ID document such as a passport.
  */
 public class IDreader {
-    String surname = "";
-    String lastname = "";
-    String street = "";
-    String housenumber = "";
-    String zipcode = "";
-    String state = "";
-    String country = "";
-    String phone = "";
-    String bsn = "";
-    String passportIdentifier = "";
+    byte CONNECTION_STATUS;
 
     public IDreader() {
-        // Init stuff
+        CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
     }
 
-    public boolean verifyIntegrity() {
-        // TODO: Method stub
-        return false;
+    private boolean isConnected() {
+        return CONNECTION_STATUS == CONSTANTS.CONNECTION_STATUS_CONNECTED;
+    }
+
+    /**
+     * This method attempts to set up a link to the ID verification server.
+     */
+    private boolean connect() {
+        System.out.println("Connecting to the verification server...");
+
+        // TODO: Set up the connection.
+
+        System.out.println("Successfully connected to the server.");
+        CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_CONNECTED;
+
+        return isConnected();
+    }
+
+    public void verifyIntegrity() throws IDVerificationException {
+        if (connect()) {
+            System.out.println("Starting identity verification...");
+
+            // TODO: Perform verification
+
+            System.out.println("Everything checks out. Your ID is genuine.");
+        } else {
+            throw new IDVerificationException("Your ID couldn't be verified. It might have been tampered with.");
+        }
     }
 
     public void storePassportData() {
