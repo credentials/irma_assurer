@@ -1,6 +1,7 @@
-package org.irmacard.identity;
+package org.irmacard.identity.assurer;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.irmacard.identity.common.CONSTANTS;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;

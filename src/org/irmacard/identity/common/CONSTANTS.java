@@ -1,4 +1,4 @@
-package org.irmacard.identity;
+package org.irmacard.identity.common;
 
 
 /**

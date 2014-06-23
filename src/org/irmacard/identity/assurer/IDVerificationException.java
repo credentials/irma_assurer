@@ -1,4 +1,4 @@
-package org.irmacard.identity;
+package org.irmacard.identity.assurer;
 
 /**
  * Exception that is intended for failure when verifying integrity of an ID document, such as a passport.
