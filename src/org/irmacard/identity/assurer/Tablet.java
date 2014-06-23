@@ -27,7 +27,7 @@ public class Tablet {
      */
     public Tablet() {
         this.crypto = new Crypto();
-        this.id = new IDreader();
+        this.id = new IDreader(crypto);
         CardTerminals terminalList = TerminalFactory.getDefault().terminals();
         try {
             this.terminalService = new TerminalCardService(terminalList.list().get(0));
@@ -105,10 +105,16 @@ public class Tablet {
         return false;
     }
 
+    /**
+     * @see Crypto#generateSessionKey()
+     */
     private void generateSessionKey() {
         crypto.generateSessionKey();
     }
 
+    /**
+     * @see Crypto#reset()
+     */
     private void reset() {
         crypto.reset();
     }

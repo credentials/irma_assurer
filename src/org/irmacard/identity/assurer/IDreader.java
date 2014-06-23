@@ -8,13 +8,17 @@ import org.irmacard.credentials.keys.*;
 import org.irmacard.credentials.util.*;
 import org.irmacard.identity.common.CONSTANTS;
 
+import javax.crypto.SecretKey;
+
 /**
  * IDreader will handle the reading of data on the chip inside an ID document such as a passport.
  */
 public class IDreader {
+    Crypto crypto;
     byte CONNECTION_STATUS;
 
-    public IDreader() {
+    public IDreader(Crypto c) {
+        crypto = c;
         CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
     }
 
@@ -29,6 +33,8 @@ public class IDreader {
         System.out.println("Connecting to the verification server...");
 
         // TODO: Set up the connection.
+
+        SecretKey kTS = crypto.getSessionKey();
 
         System.out.println("Successfully connected to the server.");
         CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_CONNECTED;
