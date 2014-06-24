@@ -5,10 +5,7 @@ import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.*;
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Arrays;
 
@@ -20,18 +17,24 @@ import java.util.Arrays;
 public class Server {
     ServerSocket serverSocket;
     Socket clientSocket;
+
+    PrintWriter out;
+    BufferedReader in;
+
     RSAPrivateKey skT;
 
     public Server() {
         try {
             ServerSocketFactory ssf = ServerSocketFactory.getDefault();
             serverSocket = ssf.createServerSocket(8888);
-            System.out.print(serverSocket);
+            System.out.println(serverSocket);
             clientSocket = serverSocket.accept(); // Blocks until a connection is made. Move it to the start() method.
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+        } catch (SocketException e) {
+            e.printStackTrace();
         } catch (SSLException e) {
-            System.out.print("Error");
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
@@ -55,20 +58,24 @@ public class Server {
     }
 
     private void start() {
-        System.out.println("Initializing server.");
-        while (true) {
-            System.out.println("Waiting for a request.");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                System.out.println("Abort requested. Terminating.");
-                e.printStackTrace();
+        System.out.println("Awaiting instructions");
+        String command;
+        try {
+            while ((command = in.readLine()) != null) {
+                System.out.println("Received command \"" + command + "\".");
+                if (command.equals("VERIFY_ID")) {
+                    out.println("UNDERSTOOD");
+                } else {
+                    out.println("ERROR");
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     public static void main(String[] args) {
         Server server = new Server();
-        // server.start();
+        server.start();
     }
 }

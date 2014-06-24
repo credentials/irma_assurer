@@ -8,6 +8,7 @@ import javax.smartcardio.*;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.interfaces.RSAPublicKey;
 
@@ -62,10 +63,15 @@ public class Tablet {
                     break;
                 case CHIP_TYPE_ID:
                     try {
-                        connectToServer("localhost", 8888);
-                        id.verifyIntegrity();
-                        id.storePassportData();
+                        if (connectToServer("localhost", 8888)) {
+                            sendData();
+                            receiveData();
+                            id.verifyIntegrity();
+                            id.storePassportData();
+                        }
                     } catch (IDVerificationException e) {
+                        e.printStackTrace();
+                    } catch (SocketException e) {
                         e.printStackTrace();
                     }
                     break;
@@ -139,6 +145,22 @@ public class Tablet {
             e.printStackTrace();
         }
         return false;
+    }
+
+    private void sendData() {
+        String command = "VERIFY_ID";
+        out.println(command);
+    }
+
+    private void receiveData() throws SocketException {
+        String responseLine;
+        try {
+            while ((responseLine = in.readLine()) != null) {
+                System.out.println(responseLine);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
