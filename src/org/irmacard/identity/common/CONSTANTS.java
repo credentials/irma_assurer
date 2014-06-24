@@ -15,4 +15,13 @@ public class CONSTANTS {
     public static final byte CONNECTION_STATUS_DISCONNECTED = 0x00;
     /** The tablet is connected to the verification server. */
     public static final byte CONNECTION_STATUS_CONNECTED = 0x01;
+
+
+    public static final String INS_VERIFY_ID = "INS_VERIFY_ID";
+    public static final String INS_SIGN_CREDENTIALS = "INS_SIGN_CREDENTIALS";
+
+    public static final String EXIT = "EXIT";
+    public static final String ACK = "ACK";
+    public static final String OK = "OK";
+    public static final String ERROR = "ERROR";
 }

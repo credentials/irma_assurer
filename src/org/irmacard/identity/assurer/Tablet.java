@@ -2,14 +2,12 @@
 package org.irmacard.identity.assurer;
 
 import net.sourceforge.scuba.smartcards.*;
+import org.irmacard.identity.common.CONSTANTS;
 import org.irmacard.identity.common.Formatter;
 
 import javax.smartcardio.*;
 import java.io.*;
-import java.net.ConnectException;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.security.interfaces.RSAPublicKey;
 
 import java.util.Scanner;
@@ -63,7 +61,8 @@ public class Tablet {
                     break;
                 case CHIP_TYPE_ID:
                     try {
-                        if (connectToServer("localhost", 8888)) {
+                        String host = InetAddress.getLocalHost().getHostName();
+                        if (connectToServer(host, 8888)) {
                             sendData();
                             receiveData();
                             id.verifyIntegrity();
@@ -72,6 +71,8 @@ public class Tablet {
                     } catch (IDVerificationException e) {
                         e.printStackTrace();
                     } catch (SocketException e) {
+                        e.printStackTrace();
+                    } catch (UnknownHostException e) {
                         e.printStackTrace();
                     }
                     break;
@@ -148,8 +149,7 @@ public class Tablet {
     }
 
     private void sendData() {
-        String command = "VERIFY_ID";
-        out.println(command);
+        out.println(CONSTANTS.INS_VERIFY_ID);
     }
 
     private void receiveData() throws SocketException {

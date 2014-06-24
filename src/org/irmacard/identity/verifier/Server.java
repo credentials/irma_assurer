@@ -1,13 +1,17 @@
 package org.irmacard.identity.verifier;
 
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+import org.irmacard.identity.common.CONSTANTS;
 
 import javax.net.ServerSocketFactory;
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
+import javax.net.ssl.SSLException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.Arrays;
 
 /**
  * This class represents the backend of the IRMA card assurer protocol. It verifies the credentials read and sent by
@@ -15,6 +19,7 @@ import java.util.Arrays;
  * create and sign an IRMA attribute to be issued by the assurer.
  */
 public class Server {
+    Crypto crypto;
     ServerSocket serverSocket;
     Socket clientSocket;
 
@@ -23,10 +28,10 @@ public class Server {
 
     RSAPrivateKey skT;
 
-    public Server() {
+    public Server(int port) {
         try {
-            ServerSocketFactory ssf = ServerSocketFactory.getDefault();
-            serverSocket = ssf.createServerSocket(8888);
+            crypto = new Crypto();
+            serverSocket = ServerSocketFactory.getDefault().createServerSocket(port);
             System.out.println(serverSocket);
             clientSocket = serverSocket.accept(); // Blocks until a connection is made. Move it to the start() method.
             out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -41,10 +46,6 @@ public class Server {
         }
     }
 
-    private void generateSessionKey() {
-        // TODO: Method stub
-    }
-
     private void verifyCredential() {
         // TODO: Method stub
     }
@@ -57,25 +58,37 @@ public class Server {
         // TODO: Method stub
     }
 
+    private void authenticate() {
+        crypto.generateSessionKey();
+        crypto.encrypt("TODO");
+        crypto.storeClientKey();
+    }
+
     private void start() {
-        System.out.println("Awaiting instructions");
-        String command;
+        authenticate();
+        System.out.println("Server initialized. Awaiting instructions.");
+        String instruction;
         try {
-            while ((command = in.readLine()) != null) {
-                System.out.println("Received command \"" + command + "\".");
-                if (command.equals("VERIFY_ID")) {
-                    out.println("UNDERSTOOD");
+            while ((instruction = in.readLine()) != null) {
+                System.out.println("Received instruction \"" + instruction + "\".");
+
+                if (instruction.equals(CONSTANTS.INS_VERIFY_ID)) {
+                    out.println(CONSTANTS.OK);
+                } else if (instruction.equals(CONSTANTS.INS_SIGN_CREDENTIALS)) {
+                    out.println(CONSTANTS.OK);
                 } else {
-                    out.println("ERROR");
+                    out.println(CONSTANTS.ERROR);
+                    System.out.println("Unsupported instruction \"" + instruction + "\"");
                 }
             }
+            System.out.println("Server shutting down.");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public static void main(String[] args) {
-        Server server = new Server();
+        Server server = new Server(8888);
         server.start();
     }
 }
