@@ -5,6 +5,10 @@ import net.sourceforge.scuba.smartcards.*;
 import org.irmacard.identity.common.Formatter;
 
 import javax.smartcardio.*;
+import java.io.*;
+import java.net.ConnectException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.interfaces.RSAPublicKey;
 
 import java.util.Scanner;
@@ -19,6 +23,9 @@ public class Tablet {
     TerminalCardService terminalService;
     Crypto crypto;
 
+    PrintWriter out;
+    BufferedReader in;
+
     final int CHIP_TYPE_IRMA = 1;
     final int CHIP_TYPE_ID = 2;
 
@@ -26,11 +33,11 @@ public class Tablet {
      * Create a new Tablet and initialize variables
      */
     public Tablet() {
-        this.crypto = new Crypto();
-        this.id = new IDreader(crypto);
+        crypto = new Crypto();
+        id = new IDreader(crypto);
         CardTerminals terminalList = TerminalFactory.getDefault().terminals();
         try {
-            this.terminalService = new TerminalCardService(terminalList.list().get(0));
+            terminalService = new TerminalCardService(terminalList.list().get(0));
         } catch (CardException e) {
             System.out.println("Could not select the correct terminal.");
             e.printStackTrace();
@@ -44,10 +51,10 @@ public class Tablet {
      * This is the backbone of the tablet's functionality. This method determines which actions to perform.
      */
     private void start() {
-        System.out.printf("Using terminal '%s'\n", this.terminalService.getTerminal());
+        System.out.printf("Using terminal '%s'\n", terminalService.getTerminal());
         System.out.println("Please keep your card or identity document against the terminal.");
         System.out.printf("Is this an IRMA card (%d) or an identity document (%d)? ", CHIP_TYPE_IRMA, CHIP_TYPE_ID);
-        if (awaitConnection()) {
+        if (awaitCard()) {
             switch (new Scanner(System.in).nextInt()) {
                 case CHIP_TYPE_IRMA:
                     generateSessionKey();
@@ -55,6 +62,7 @@ public class Tablet {
                     break;
                 case CHIP_TYPE_ID:
                     try {
+                        connectToServer("localhost", 8888);
                         id.verifyIntegrity();
                         id.storePassportData();
                     } catch (IDVerificationException e) {
@@ -71,10 +79,10 @@ public class Tablet {
     }
 
     /**
-     * @see #awaitConnection(long)
+     * @see #awaitCard(long)
      */
-    private boolean awaitConnection() {
-        return awaitConnection(0);
+    private boolean awaitCard() {
+        return awaitCard(0);
     }
 
     /**
@@ -83,7 +91,7 @@ public class Tablet {
      * @param timeout The number of milliseconds to wait.
      * @return true if a card was detected, false otherwise.
      */
-    private boolean awaitConnection(long timeout) {
+    private boolean awaitCard(long timeout) {
         try {
             if (!terminalService.getTerminal().waitForCardPresent(timeout)) {
                 System.out.println("No IRMA card was detected in the allotted time.");
@@ -101,6 +109,34 @@ public class Tablet {
         } catch (CardServiceException e) {
             e.printStackTrace();
             return false;
+        }
+        return false;
+    }
+
+    /**
+     * Attempts to set up a connection to the verification server.
+     * @param host The hostname of the server.
+     * @param port The port number of the server.
+     * @return true if successful, false otherwise.
+     */
+    private boolean connectToServer(String host, int port) {
+        try {
+            System.out.println("Opening a new socket.");
+
+            Socket s = new Socket(host, port);
+
+            System.out.println("Socket opened. Creating input and output streams.");
+
+            out = new PrintWriter(s.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+
+            return s.isConnected();
+        } catch (ConnectException e) {
+            System.out.printf("Could not connect to server: \"%s\"\n", e.getMessage());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return false;
     }
