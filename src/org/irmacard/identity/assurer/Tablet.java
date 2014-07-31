@@ -66,20 +66,26 @@ public class Tablet {
                     break;
                 case CHIP_TYPE_ID:
                     try {
+                        /*
                         String host = InetAddress.getLocalHost().getHostName();
-                        //if (connectToServer(host, 8888)) {
-                            //sendData();
-                            //receiveData();
-                            id.verifyIntegrity();
-                            //id.storePassportData();
-                        //}
+                        if (connectToServer(host, 8888)) {
+                            sendData();
+                            receiveData();
+                        }
+                        */
+                        // TODO: Temporarily store this here
+                        String documentNumber = "NSK8DCPJ4";
+                        String dateOfBirth = "880810";
+                        String dateOfExpiry = "180321";
+
+                        id.verifyIntegrity(documentNumber, dateOfBirth, dateOfExpiry);
                     } catch (IDVerificationException e) {
                         e.printStackTrace();
-                    //} catch (SocketException e) {
+                    }/* catch (SocketException e) {
                     //    e.printStackTrace();
                     } catch (UnknownHostException e) {
                         e.printStackTrace();
-                    }
+                    }*/
                     break;
                 default:
                     System.out.println("Unsupported operation, please try again.");

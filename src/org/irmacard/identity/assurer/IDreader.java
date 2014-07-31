@@ -9,7 +9,12 @@ import org.jmrtd.VerificationStatus;
 import org.jmrtd.lds.MRZInfo;
 
 import javax.crypto.SecretKey;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 /**
  * IDreader will handle the reading of data on the chip inside an ID document such as a passport.
@@ -29,19 +34,32 @@ public class IDreader {
         return CONNECTION_STATUS == CONSTANTS.CONNECTION_STATUS_CONNECTED;
     }
 
+    private Socket connectToServer(String hostname, int port) {
+        System.out.println("Connecting to the verification server...");
+        SSLSocket s = null;
 
-    private boolean connectToPassport() {
+        // TODO: Set up connection to the server
+
+        try {
+            s = (SSLSocket) SSLSocketFactory.getDefault().createSocket(hostname, port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_CONNECTED;
+        return s;
+    }
+
+    private boolean verifyLocally(String documentNumber, String dateOfBirth, String dateOfExpiry) {
         try {
             // Set up a connection to the passport service
             ps.open();
 
             if (ps.isOpen()) {
 
-                // Perform BAC to allow access to passport data // TODO: don't hardcode
-                String documentNumber = "NSK8DCPJ4";
-                String dateOfBirth = "880810";
-                String dateOfExpiry = "180321";
-
+                // Perform BAC to allow access to passport data
                 BACKeySpec bacKey = new BACKey(documentNumber, dateOfBirth, dateOfExpiry);
                 ps.doBAC(bacKey);
 
@@ -65,8 +83,6 @@ public class IDreader {
 
                 // TODO: Check if we hold the right country certificate for signing (determine req. certificate from CVCA)
 
-
-
                 // Perform EAC part one (CA) to allow access to biometric passport data
                 BigInteger keyId = new BigInteger(dg14);
                 // ps.doCA(keyId, publicKey);
@@ -80,7 +96,7 @@ public class IDreader {
                 // Close the passport service when done
                 ps.close();
             }
-            return !ps.isOpen();
+            return true;
         } catch (CardServiceException e) {
             System.out.println("Error connecting to the passport");
             e.printStackTrace();
@@ -91,25 +107,33 @@ public class IDreader {
     /**
      * This method attempts to set up a link to the ID verification server.
      */
-    private boolean connectToVerificationServer() {
-        System.out.println("Connecting to the verification server...");
+    private boolean verifyRemotely() {
+        String hostname = "localhost";
+        int port = 9999;
+        Socket s = connectToServer(hostname, port);
 
-        SecretKey kTS = crypto.getSessionKey();
-
-        CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_CONNECTED;
-
-        return isConnected();
+        if (isConnected()) {
+            // TODO: Perform remote verification
+            SecretKey kTS = crypto.getSessionKey();
+        }
+        return false;
     }
 
-    public VerificationStatus.Verdict verifyIntegrity() throws IDVerificationException {
-        if (connectToPassport()) {
-            System.out.println("Starting identity verification...");
-            VerificationStatus.Verdict verdict = VerificationStatus.Verdict.NOT_CHECKED;
+    public VerificationStatus.Verdict verifyIntegrity(String documentNumber, String dateOfBirth, String dateOfExpiry) throws IDVerificationException {
+        VerificationStatus.Verdict localVerdict = VerificationStatus.Verdict.NOT_CHECKED;
+        VerificationStatus.Verdict remoteVerdict = VerificationStatus.Verdict.NOT_CHECKED;
 
-            // TODO: Perform verification
+        if (verifyLocally(documentNumber, dateOfBirth, dateOfExpiry)) {
+            System.out.println("The passport passes local checks. Sending to the server for further analysis.");
+            localVerdict = VerificationStatus.Verdict.SUCCEEDED;
+        }
+        if (verifyRemotely()) {
+            System.out.println("The passport passes remote checks as well. Proceeding with IRMA attributes.");
+        }
 
+        if (localVerdict == VerificationStatus.Verdict.SUCCEEDED && remoteVerdict == VerificationStatus.Verdict.SUCCEEDED) {
             System.out.println("Everything checks out. Your ID is genuine.");
-            return verdict;
+            return VerificationStatus.Verdict.SUCCEEDED;
         } else {
             throw new IDVerificationException("Your ID couldn't be verified. It might have been tampered with.");
         }
