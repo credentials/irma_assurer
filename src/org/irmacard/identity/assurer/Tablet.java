@@ -4,6 +4,7 @@ package org.irmacard.identity.assurer;
 import net.sourceforge.scuba.smartcards.*;
 import org.irmacard.identity.common.CONSTANTS;
 import org.irmacard.identity.common.Formatter;
+import org.jmrtd.PassportService;
 
 import javax.smartcardio.*;
 import java.io.*;
@@ -33,15 +34,19 @@ public class Tablet {
      */
     public Tablet() {
         crypto = new Crypto();
-        id = new IDreader(crypto);
+
         CardTerminals terminalList = TerminalFactory.getDefault().terminals();
         try {
             terminalService = new TerminalCardService(terminalList.list().get(0));
+            CardService cs = CardService.getInstance(terminalList.list().get(0));
+            id = new IDreader(crypto, new PassportService(cs));
         } catch (CardException e) {
             System.out.println("Could not select the correct terminal.");
             e.printStackTrace();
         } catch (IndexOutOfBoundsException e) {
             System.out.println("No terminals were detected. Are you sure it is connected?");
+            e.printStackTrace();
+        } catch (CardServiceException e) {
             e.printStackTrace();
         }
     }
@@ -62,16 +67,16 @@ public class Tablet {
                 case CHIP_TYPE_ID:
                     try {
                         String host = InetAddress.getLocalHost().getHostName();
-                        if (connectToServer(host, 8888)) {
-                            sendData();
-                            receiveData();
+                        //if (connectToServer(host, 8888)) {
+                            //sendData();
+                            //receiveData();
                             id.verifyIntegrity();
-                            id.storePassportData();
-                        }
+                            //id.storePassportData();
+                        //}
                     } catch (IDVerificationException e) {
                         e.printStackTrace();
-                    } catch (SocketException e) {
-                        e.printStackTrace();
+                    //} catch (SocketException e) {
+                    //    e.printStackTrace();
                     } catch (UnknownHostException e) {
                         e.printStackTrace();
                     }

@@ -24,4 +24,10 @@ public class CONSTANTS {
     public static final String ACK = "ACK";
     public static final String OK = "OK";
     public static final String ERROR = "ERROR";
+
+
+
+    // Delimiters for the various Data Groups on the Passport chip
+    public static final int PASSPORT_DG1_OFFSET = 5;
+    public static final int PASSPORT_DG1_LE = 250;
 }
