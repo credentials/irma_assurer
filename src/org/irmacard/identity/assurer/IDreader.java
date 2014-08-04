@@ -19,19 +19,27 @@ public class IDreader {
     Crypto crypto;
     PassportService passportService;
     byte CONNECTION_STATUS;
-    private URI keyStoreURI;
+    private MRTDTrustStore trustManager;
+    private List<BACKeySpec> bacStore;
 
-    public IDreader(Crypto c, PassportService p) {
+    public IDreader(Crypto c, PassportService ps) {
         crypto = c;
-        passportService = p;
+        passportService = ps;
         CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
+
         try {
             // TODO: Make this path relative
-            keyStoreURI = new URI("file:/C:/Users/Geert/Documents/Universiteit/Masterscriptie/irma_assurer/csca.ks");
+            URI keyStoreURI = new URI("file:/C:/Users/Geert/Documents/Universiteit/Masterscriptie/irma_assurer/csca.ks");
+
+            trustManager = new MRTDTrustStore();
+            trustManager.addCSCAStore(keyStoreURI); // Only for BAC, EAC needs CVCA store
+
+            bacStore = new ArrayList<BACKeySpec>();
         } catch (URISyntaxException e) {
             System.out.println("The keystore file path appears malformed: " + e.getMessage());
             e.printStackTrace();
         }
+
     }
 
     private boolean isConnected() {
@@ -61,11 +69,7 @@ public class IDreader {
     private VerificationStatus verifyLocally(String documentNumber, String dateOfBirth, String dateOfExpiry) {
         VerificationStatus vs = new VerificationStatus();
         try {
-            List<BACKeySpec> bacStore = new ArrayList<BACKeySpec>();
             bacStore.add(new BACKey(documentNumber, dateOfBirth, dateOfExpiry));
-
-            MRTDTrustStore trustManager = new MRTDTrustStore();
-            trustManager.addCSCAStore(keyStoreURI);
 
             // This generates an exception by default on BAC enabled passports. Don't worry!
             Passport passport = new Passport(passportService, trustManager, bacStore);
@@ -78,6 +82,8 @@ public class IDreader {
             System.out.println("====================================");
 
             vs = passport.getVerificationStatus();
+        } catch (IllegalArgumentException e) {
+            System.out.println("You have entered an incorrect value: " + e.getMessage());
         } catch (CardServiceException e) {
             System.out.println("Error connecting to the passport: " + e.getMessage());
             e.printStackTrace();
