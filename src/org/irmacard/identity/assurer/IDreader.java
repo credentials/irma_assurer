@@ -8,8 +8,7 @@ import javax.crypto.SecretKey;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,11 +19,19 @@ public class IDreader {
     Crypto crypto;
     PassportService passportService;
     byte CONNECTION_STATUS;
+    private URI keyStoreURI;
 
     public IDreader(Crypto c, PassportService p) {
         crypto = c;
         passportService = p;
         CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
+        try {
+            // TODO: Make this path relative
+            keyStoreURI = new URI("file:/C:/Users/Geert/Documents/Universiteit/Masterscriptie/irma_assurer/csca.ks");
+        } catch (URISyntaxException e) {
+            System.out.println("The keystore file path appears malformed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private boolean isConnected() {
@@ -41,6 +48,8 @@ public class IDreader {
             s = (SSLSocket) SSLSocketFactory.getDefault().createSocket(hostname, port);
         } catch (UnknownHostException e) {
             e.printStackTrace();
+        } catch (ConnectException ce) {
+            System.out.println("ERROR: " + ce.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -50,66 +59,30 @@ public class IDreader {
     }
 
     private VerificationStatus verifyLocally(String documentNumber, String dateOfBirth, String dateOfExpiry) {
+        VerificationStatus vs = new VerificationStatus();
         try {
-            // Set up a connection to the passport service
             List<BACKeySpec> bacStore = new ArrayList<BACKeySpec>();
             bacStore.add(new BACKey(documentNumber, dateOfBirth, dateOfExpiry));
 
             MRTDTrustStore trustManager = new MRTDTrustStore();
+            trustManager.addCSCAStore(keyStoreURI);
+
+            // This generates an exception by default on BAC enabled passports. Don't worry!
             Passport passport = new Passport(passportService, trustManager, bacStore);
 
-            return new VerificationStatus();// passport.verifySecurity();
-            /*
-            passportService.open();
+            System.out.println("====================================");
+            System.out.println("Supported features of this passport:");
+            System.out.println("AA : " + passport.getFeatures().hasAA());
+            System.out.println("BAC: " + passport.getFeatures().hasBAC());
+            System.out.println("EAC: " + passport.getFeatures().hasEAC());
+            System.out.println("====================================");
 
-            if (passportService.isOpen()) {
-
-                // Perform BAC to allow access to passport data
-                BACKeySpec bacKey = new BACKey(documentNumber, dateOfBirth, dateOfExpiry);
-                passportService.doBAC(bacKey);
-
-                // Read out passport data required for EAC // TODO: Hardcoded still
-                int offset = 5;
-                int le = 250;
-                boolean longRead = false;
-
-                passportService.sendSelectFile(PassportService.EF_DG1);  // Get MRZ info
-                byte[] dg1 = passportService.sendReadBinary(CONSTANTS.PASSPORT_DG1_OFFSET, CONSTANTS.PASSPORT_DG1_LE, false);
-
-                passportService.sendSelectFile(PassportService.EF_DG14);  // Get CA keys
-                byte[] dg14 = passportService.sendReadBinary(offset, le, longRead);
-
-                MRZInfo mrzInfo = new MRZInfo(new String(dg1));
-
-                System.out.printf("Here come the first %d bytes of DG_1: %s\n", le + 1, mrzInfo);
-
-                passportService.sendSelectFile(PassportService.EF_CVCA);  // Get TA root certificate info
-                byte[] cvca = passportService.sendReadBinary(offset, le, longRead);
-
-                // TODO: Check if we hold the right country certificate for signing (determine req. certificate from CVCA)
-
-                // Perform EAC part one (CA) to allow access to biometric passport data
-                BigInteger keyId = new BigInteger(dg14);
-                // passportService.doCA(keyId, publicKey);
-
-
-                passportService.sendSelectFile(PassportService.EF_SOD);  // Get Security Object Directory
-                byte[] sod = passportService.sendReadBinary(offset, le, longRead);
-
-                // passportService.doTA();
-
-                // Close the passport service when done
-                passportService.close();
-            }
-            return true;
-            */
-
-
+            vs = passport.getVerificationStatus();
         } catch (CardServiceException e) {
-            System.out.println("Error connecting to the passport");
+            System.out.println("Error connecting to the passport: " + e.getMessage());
             e.printStackTrace();
-            return new VerificationStatus();
         }
+        return vs;
     }
 
     /**
@@ -118,7 +91,7 @@ public class IDreader {
     private boolean verifyRemotely() {
         String hostname = "localhost";
         int port = 9999;
-        Socket s = connectToServer(hostname, port);
+        Socket socket = connectToServer(hostname, port);
 
         if (isConnected()) {
             // TODO: Perform remote verification
@@ -130,8 +103,17 @@ public class IDreader {
     public VerificationStatus.Verdict verifyIntegrity(String documentNumber, String dateOfBirth, String dateOfExpiry) throws IDVerificationException {
         VerificationStatus localStatus = verifyLocally(documentNumber, dateOfBirth, dateOfExpiry);
 
-        System.out.println(localStatus);
+        System.out.println("====================================");
+        System.out.println("Verification Status results:");
+        System.out.println("AA : " + localStatus.getAA());
+        System.out.println("BAC: " + localStatus.getBAC());
+        System.out.println("CS : " + localStatus.getCS());
+        System.out.println("DS : " + localStatus.getDS());
+        System.out.println("EAC: " + localStatus.getEAC());
+        System.out.println("HT : " + localStatus.getHT());
+        System.out.println("====================================");
 
+        // TODO: Determine what local checks suffice for integrity
         System.out.println("The passport passes local checks. Sending to the server for further analysis.");
 
         if (verifyRemotely()) {
