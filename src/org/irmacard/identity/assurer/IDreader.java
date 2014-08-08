@@ -39,7 +39,6 @@ public class IDreader {
             System.out.println("The keystore file path appears malformed: " + e.getMessage());
             e.printStackTrace();
         }
-
     }
 
     private boolean isConnected() {
@@ -81,7 +80,7 @@ public class IDreader {
             System.out.println("EAC: " + passport.getFeatures().hasEAC());
             System.out.println("====================================");
 
-            vs = passport.getVerificationStatus();
+            vs = passport.verifySecurity();
         } catch (IllegalArgumentException e) {
             System.out.println("You have entered an incorrect value: " + e.getMessage());
         } catch (CardServiceException e) {
@@ -111,12 +110,12 @@ public class IDreader {
 
         System.out.println("====================================");
         System.out.println("Verification Status results:");
-        System.out.println("AA : " + localStatus.getAA());
-        System.out.println("BAC: " + localStatus.getBAC());
-        System.out.println("CS : " + localStatus.getCS());
-        System.out.println("DS : " + localStatus.getDS());
-        System.out.println("EAC: " + localStatus.getEAC());
-        System.out.println("HT : " + localStatus.getHT());
+        System.out.println("AA : " + localStatus.getAA()  + "\t : " + localStatus.getAAReason());
+        System.out.println("BAC: " + localStatus.getBAC() + "\t : " + localStatus.getBACReason());
+        System.out.println("CS : " + localStatus.getCS()  + "\t : " + localStatus.getCSReason());
+        System.out.println("DS : " + localStatus.getDS()  + "\t : " + localStatus.getDSReason());
+        System.out.println("EAC: " + localStatus.getEAC() + "\t : " + localStatus.getEACReason());
+        System.out.println("HT : " + localStatus.getHT()  + "\t : " + localStatus.getHTReason());
         System.out.println("====================================");
 
         // TODO: Determine what local checks suffice for integrity
