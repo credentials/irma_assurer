@@ -19,7 +19,7 @@ import java.util.Scanner;
  * @author Geert Smelt
  */
 public class Tablet {
-    IDreader id;
+    PassportReader passportReader;
     TerminalCardService terminalCardService;
     Crypto crypto;
 
@@ -27,7 +27,7 @@ public class Tablet {
     BufferedReader in;
 
     final int CHIP_TYPE_IRMA = 1;
-    final int CHIP_TYPE_ID = 2;
+    final int CHIP_TYPE_EID = 2;
 
     /**
      * Create a new Tablet and initialize variables
@@ -39,7 +39,7 @@ public class Tablet {
         try {
             terminalCardService = new TerminalCardService(terminalList.list().get(0));
             CardService cs = CardService.getInstance(terminalList.list().get(0));
-            id = new IDreader(crypto, new PassportService(cs));
+            passportReader = new PassportReader(new PassportService(cs));
         } catch (CardException e) {
             System.out.println("Could not select the correct terminal.");
             e.printStackTrace();
@@ -57,35 +57,22 @@ public class Tablet {
     private void start() {
         System.out.printf("Using terminal '%s'\n", terminalCardService.getTerminal());
         System.out.println("Please keep your card or identity document against the terminal.");
-        System.out.printf("Is this an IRMA card (%d) or an identity document (%d)? ", CHIP_TYPE_IRMA, CHIP_TYPE_ID);
+        System.out.printf("Is this an IRMA card (%d) or an identity document (%d)? ", CHIP_TYPE_IRMA, CHIP_TYPE_EID);
         if (awaitCard()) {
             switch (new Scanner(System.in).nextInt()) {
                 case CHIP_TYPE_IRMA:
                     generateSessionKey();
                     System.out.print(Formatter.toHexString(terminalCardService.getATR()));
                     break;
-                case CHIP_TYPE_ID:
-                    try {
-                        /*
-                        String host = InetAddress.getLocalHost().getHostName();
-                        if (connectToServer(host, 8888)) {
-                            sendData();
-                            receiveData();
-                        }
-                        */
-                        // TODO: Temporarily store this here
-                        String documentNumber = "NSK8DCPJ4";
-                        String dateOfBirth = "880810";
-                        String dateOfExpiry = "180321";
+                case CHIP_TYPE_EID:
+                    // TODO: Temporarily store this here
+                    String documentNumber = "NSK8DCPJ4";
+                    String dateOfBirth = "880810";
+                    String dateOfExpiry = "180321";
 
-                        id.verifyIntegrity(documentNumber, dateOfBirth, dateOfExpiry);
-                    } catch (IDVerificationException e) {
-                        e.printStackTrace();
-                    }/* catch (SocketException e) {
-                    //    e.printStackTrace();
-                    } catch (UnknownHostException e) {
-                        e.printStackTrace();
-                    }*/
+                    passportReader.verifyIntegrity(documentNumber, dateOfBirth, dateOfExpiry);
+                    ConnectionManager connectionManager = ConnectionManager.getInstance();
+                    connectionManager.connectToServer();
                     break;
                 default:
                     System.out.println("Unsupported operation, please try again.");

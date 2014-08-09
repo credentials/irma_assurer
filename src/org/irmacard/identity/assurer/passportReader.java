@@ -1,36 +1,29 @@
 package org.irmacard.identity.assurer;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import org.irmacard.identity.common.CONSTANTS;
 import org.jmrtd.*;
+import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceInfo;
 import org.jmrtd.lds.LDS;
 
-import javax.crypto.SecretKey;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.net.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * IDreader will handle the reading of data on the chip inside an ID document such as a passport.
  */
-public class IDreader {
+public class PassportReader {
     Passport passport;
-    Crypto crypto;
     PassportService passportService;
-    byte CONNECTION_STATUS;
     private MRTDTrustStore trustManager;
     private List<BACKeySpec> bacStore;
 
-    public IDreader(Crypto c, PassportService ps) {
-        crypto = c;
+    public PassportReader(PassportService ps) {
         passportService = ps;
-        CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
-
         try {
             String keyStorePath = "file:/" + System.getProperty("user.dir").replace("\\", "/") + "/irma_assurer/csca.ks";
 
@@ -42,30 +35,6 @@ public class IDreader {
             System.out.println("The keystore file path appears malformed: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    private boolean isConnected() {
-        return CONNECTION_STATUS == CONSTANTS.CONNECTION_STATUS_CONNECTED;
-    }
-
-    private Socket connectToServer(String hostname, int port) {
-        System.out.println("Connecting to the verification server...");
-        SSLSocket s = null;
-
-        // TODO: Set up connection to the server
-
-        try {
-            s = (SSLSocket) SSLSocketFactory.getDefault().createSocket(hostname, port);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (ConnectException ce) {
-            System.out.println("ERROR: " + ce.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_CONNECTED;
-        return s;
     }
 
     private VerificationStatus verifyLocally(String documentNumber, String dateOfBirth, String dateOfExpiry) {
@@ -94,22 +63,7 @@ public class IDreader {
         return vs;
     }
 
-    /**
-     * This method attempts to set up a link to the ID verification server.
-     */
-    private boolean verifyRemotely() {
-        String hostname = "localhost";
-        int port = 9999;
-        Socket socket = connectToServer(hostname, port);
-
-        if (isConnected()) {
-            // TODO: Perform remote verification
-            SecretKey kTS = crypto.getSessionKey();
-        }
-        return false;
-    }
-
-    public VerificationStatus.Verdict verifyIntegrity(String documentNumber, String dateOfBirth, String dateOfExpiry) throws IDVerificationException {
+    public VerificationStatus.Verdict verifyIntegrity(String documentNumber, String dateOfBirth, String dateOfExpiry) {
         VerificationStatus localStatus = verifyLocally(documentNumber, dateOfBirth, dateOfExpiry);
 
         System.out.println("====================================");
@@ -122,22 +76,17 @@ public class IDreader {
         System.out.println("HT : " + localStatus.getHT()  + "\t : " + localStatus.getHTReason());
         System.out.println("====================================");
 
-        // TODO: Determine what local checks suffice for integrity
+        // TODO: Determine what local checks suffice for integrity and maybe return a boolean?
         System.out.println("The passport passes local checks. Sending to the server for further analysis.");
-
-        if (verifyRemotely()) {
-            System.out.println("The passport passes remote checks as well. Proceeding with IRMA attributes.");
-        }
-
-        storePassportData();
-
         return VerificationStatus.Verdict.SUCCEEDED;
     }
 
+    // TODO: Probably has to be moved to the server side, so it can sign immediately
     private void storePassportData() {
         try {
             LDS lds = passport.getLDS();
 
+            // TODO: Retrieve Data Groups based on the list instead of hard-coded.
             List<Short> availableDataGroups = lds.getDataGroupList();
             StringBuilder sb = new StringBuilder("Supported Data Groups in this passport: ");
             for (Short dataGroupNumber : availableDataGroups) {
@@ -153,18 +102,27 @@ public class IDreader {
                 List<FaceImageInfo> details = face.getFaceImageInfos();
                 System.out.println("There are " + details.size() + " infos in this face.");
                 for (FaceImageInfo f : details) {
-                    if (f.getSourceType() == FaceImageInfo.SOURCE_TYPE_STATIC_PHOTO_SCANNER) {
-                        // TODO: Do something more useful with this
-                        System.out.println("This picture was added from a photo scanner.");
+                    switch (f.getType()) {
+                        case DisplayedImageInfo.TYPE_PORTRAIT: System.out.println("Portrait"); break;
+                        case DisplayedImageInfo.TYPE_FINGER: System.out.println("Fingerprint"); break;
+                        case DisplayedImageInfo.TYPE_IRIS: System.out.println("Iris"); break;
+                        case DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK: System.out.println("Signature or Mark"); break;
+                        default:
+                            System.out.println("Unrecognized image type."); break;
                     }
+                    int imageLength = f.getImageLength();
+                    String imageMimeType = f.getMimeType();
+                    System.out.println("Image length: " + imageLength);
+                    System.out.println("Image Mime type: " + imageMimeType);
+
                 }
             }
 
             // System.out.println(lds.getDG3File()); // TODO: Inaccessible until after EAC is performed
 
-            // System.out.println(lds.getDG14File());
+            System.out.println(lds.getDG14File());
 
-            // System.out.println(lds.getDG15File());
+            System.out.println(lds.getDG15File());
 
         } catch (NullPointerException ignored) {
             System.out.println("The passport data has not been initialized yet.");
@@ -177,6 +135,5 @@ public class IDreader {
         passport = null;
         bacStore.clear();
         trustManager.clear();
-        // passportService.close();
     }
 }
