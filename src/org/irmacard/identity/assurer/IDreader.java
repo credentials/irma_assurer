@@ -3,6 +3,9 @@ package org.irmacard.identity.assurer;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import org.irmacard.identity.common.CONSTANTS;
 import org.jmrtd.*;
+import org.jmrtd.lds.FaceImageInfo;
+import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.LDS;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLSocket;
@@ -16,6 +19,7 @@ import java.util.List;
  * IDreader will handle the reading of data on the chip inside an ID document such as a passport.
  */
 public class IDreader {
+    Passport passport;
     Crypto crypto;
     PassportService passportService;
     byte CONNECTION_STATUS;
@@ -70,7 +74,7 @@ public class IDreader {
             bacStore.add(new BACKey(documentNumber, dateOfBirth, dateOfExpiry));
 
             // This generates an exception by default on BAC enabled passports. Don't worry!
-            Passport passport = new Passport(passportService, trustManager, bacStore);
+            passport = new Passport(passportService, trustManager, bacStore);
 
             System.out.println("====================================");
             System.out.println("Supported features of this passport:");
@@ -125,10 +129,54 @@ public class IDreader {
             System.out.println("The passport passes remote checks as well. Proceeding with IRMA attributes.");
         }
 
+        storePassportData();
+
         return VerificationStatus.Verdict.SUCCEEDED;
     }
 
-    public void storePassportData() {
-        // TODO: Method stub
+    private void storePassportData() {
+        try {
+            LDS lds = passport.getLDS();
+
+            List<Short> availableDataGroups = lds.getDataGroupList();
+            StringBuilder sb = new StringBuilder("Supported Data Groups in this passport: ");
+            for (Short dataGroupNumber : availableDataGroups) {
+                sb.append(dataGroupNumber.byteValue()).append(" ");
+            }
+            System.out.println(sb);
+
+            System.out.println(lds.getDG1File());
+
+            List<FaceInfo> availableFaces = lds.getDG2File().getFaceInfos();
+
+            for (FaceInfo face : availableFaces) {
+                List<FaceImageInfo> details = face.getFaceImageInfos();
+                System.out.println("There are " + details.size() + " infos in this face.");
+                for (FaceImageInfo f : details) {
+                    if (f.getSourceType() == FaceImageInfo.SOURCE_TYPE_STATIC_PHOTO_SCANNER) {
+                        // TODO: Do something more useful with this
+                        System.out.println("This picture was added from a photo scanner.");
+                    }
+                }
+            }
+
+            // System.out.println(lds.getDG3File()); // TODO: Inaccessible until after EAC is performed
+
+            // System.out.println(lds.getDG14File());
+
+            // System.out.println(lds.getDG15File());
+
+        } catch (NullPointerException ignored) {
+            System.out.println("The passport data has not been initialized yet.");
+        } catch (IOException e) {
+            System.out.println("ERROR: " + e.getMessage());
+        }
+    }
+
+    private void reset() {
+        passport = null;
+        bacStore.clear();
+        trustManager.clear();
+        // passportService.close();
     }
 }

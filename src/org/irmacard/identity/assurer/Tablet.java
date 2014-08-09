@@ -20,7 +20,7 @@ import java.util.Scanner;
  */
 public class Tablet {
     IDreader id;
-    TerminalCardService terminalService;
+    TerminalCardService terminalCardService;
     Crypto crypto;
 
     PrintWriter out;
@@ -37,7 +37,7 @@ public class Tablet {
 
         CardTerminals terminalList = TerminalFactory.getDefault().terminals();
         try {
-            terminalService = new TerminalCardService(terminalList.list().get(0));
+            terminalCardService = new TerminalCardService(terminalList.list().get(0));
             CardService cs = CardService.getInstance(terminalList.list().get(0));
             id = new IDreader(crypto, new PassportService(cs));
         } catch (CardException e) {
@@ -55,14 +55,14 @@ public class Tablet {
      * This is the backbone of the tablet's functionality. This method determines which actions to perform.
      */
     private void start() {
-        System.out.printf("Using terminal '%s'\n", terminalService.getTerminal());
+        System.out.printf("Using terminal '%s'\n", terminalCardService.getTerminal());
         System.out.println("Please keep your card or identity document against the terminal.");
         System.out.printf("Is this an IRMA card (%d) or an identity document (%d)? ", CHIP_TYPE_IRMA, CHIP_TYPE_ID);
         if (awaitCard()) {
             switch (new Scanner(System.in).nextInt()) {
                 case CHIP_TYPE_IRMA:
                     generateSessionKey();
-                    System.out.print(Formatter.toHexString(terminalService.getATR()));
+                    System.out.print(Formatter.toHexString(terminalCardService.getATR()));
                     break;
                 case CHIP_TYPE_ID:
                     try {
@@ -93,7 +93,7 @@ public class Tablet {
         }
 
         // Properly close the terminal service before shutting down
-        terminalService.close();
+        terminalCardService.close();
     }
 
     /**
@@ -111,12 +111,12 @@ public class Tablet {
      */
     private boolean awaitCard(long timeout) {
         try {
-            if (!terminalService.getTerminal().waitForCardPresent(timeout)) {
+            if (!terminalCardService.getTerminal().waitForCardPresent(timeout)) {
                 System.out.println("No IRMA card was detected in the allotted time.");
                 return false;
             } else {
-                terminalService.open();
-                return terminalService.isOpen();
+                terminalCardService.open();
+                return terminalCardService.isOpen();
             }
         } catch (IllegalArgumentException e) {
             System.out.println("Timeout value must not be negative.");
