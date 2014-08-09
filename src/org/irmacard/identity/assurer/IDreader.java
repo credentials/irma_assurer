@@ -28,11 +28,10 @@ public class IDreader {
         CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
 
         try {
-            // TODO: Make this path relative
-            URI keyStoreURI = new URI("file:/C:/Users/Geert/Documents/Universiteit/Masterscriptie/irma_assurer/csca.ks");
+            String keyStorePath = "file:/" + System.getProperty("user.dir").replace("\\", "/") + "/irma_assurer/csca.ks";
 
             trustManager = new MRTDTrustStore();
-            trustManager.addCSCAStore(keyStoreURI); // Only for BAC, EAC needs CVCA store
+            trustManager.addCSCAStore(new URI(keyStorePath)); // Only for BAC, EAC needs CVCA store
 
             bacStore = new ArrayList<BACKeySpec>();
         } catch (URISyntaxException e) {
@@ -84,6 +83,7 @@ public class IDreader {
         } catch (IllegalArgumentException e) {
             System.out.println("You have entered an incorrect value: " + e.getMessage());
         } catch (CardServiceException e) {
+            // TODO: Also thrown when a non-passport chip is attempted, switch to other mode dynamically
             System.out.println("Error connecting to the passport: " + e.getMessage());
             e.printStackTrace();
         }
