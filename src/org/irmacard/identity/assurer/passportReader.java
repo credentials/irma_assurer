@@ -2,10 +2,7 @@ package org.irmacard.identity.assurer;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import org.jmrtd.*;
-import org.jmrtd.lds.DisplayedImageInfo;
-import org.jmrtd.lds.FaceImageInfo;
-import org.jmrtd.lds.FaceInfo;
-import org.jmrtd.lds.LDS;
+import org.jmrtd.lds.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -25,7 +22,7 @@ public class PassportReader {
     public PassportReader(PassportService ps) {
         passportService = ps;
         try {
-            String keyStorePath = "file:/" + System.getProperty("user.dir").replace("\\", "/") + "/irma_assurer/csca.ks";
+            String keyStorePath = "file:/" + System.getProperty("user.dir").replace("\\", "/") + "/csca.ks";
 
             trustManager = new MRTDTrustStore();
             trustManager.addCSCAStore(new URI(keyStorePath)); // Only for BAC, EAC needs CVCA store
