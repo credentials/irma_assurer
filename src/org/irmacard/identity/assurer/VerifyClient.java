@@ -9,36 +9,42 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 /**
  * The verification client sets up a connection with the verification server and assigns handlers
  */
 public class VerifyClient {
+    static final boolean SSL = System.getProperty("ssl") != null;
+    static final String HOST = System.getProperty("host", "127.0.0.1");
+    static final int PORT = Integer.parseInt(System.getProperty("port", "8322"));
 
     public static void main(String[] args) throws Exception {
-        String host = args[0];
-        int port = Integer.parseInt(args[1]);
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        // Configure SSL.
+        final SslContext sslCtx;
+        if (SSL) {
+            // TODO: Change to secure TrustManager
+            sslCtx = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
+        } else {
+            sslCtx = null;
+        }
 
+        EventLoopGroup group = new NioEventLoopGroup();
         try {
-            Bootstrap b = new Bootstrap(); // (1)
-            b.group(workerGroup); // (2)
-            b.channel(NioSocketChannel.class); // (3)
-            b.option(ChannelOption.SO_KEEPALIVE, true); // (4)
-            b.handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new VerifyClientHandler());
-                }
-            });
+            Bootstrap b = new Bootstrap();
+            b.group(group).channel(NioSocketChannel.class).handler(new VerifyClientInitializer(sslCtx));
 
-            // Start the client.
-            ChannelFuture f = b.connect(host, port).sync(); // (5)
+            // Make a new connection.
+            ChannelFuture f = b.connect(HOST, PORT).sync();
 
-            // Wait until the connection is closed.
-            f.channel().closeFuture().sync();
+            // Get the handler instance to retrieve the answer.
+            VerifyClientHandler handler = (VerifyClientHandler) f.channel().pipeline().last();
+
+            // Print out the answer.
+            // System.err.format("Factorial of %,d is: %,d", COUNT, handler.getFactorial());
         } finally {
-            workerGroup.shutdownGracefully();
+            group.shutdownGracefully();
         }
     }
 }

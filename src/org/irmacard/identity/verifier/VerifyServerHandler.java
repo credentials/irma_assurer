@@ -2,21 +2,25 @@ package org.irmacard.identity.verifier;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * Handles a server-side channel.
  */
-public class VerifyServerHandler extends ChannelInboundHandlerAdapter { // (1)
+public class VerifyServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        ctx.write(msg); // (1)
-        ctx.flush(); // (2)
+    protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
+        System.out.println("Reading data from channel.");
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) { // (4)
-        // Close the connection when an exception is raised.
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        System.out.printf("Channel has become inactive.");
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
         ctx.close();
     }
