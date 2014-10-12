@@ -4,9 +4,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-/**
- * Handles a server-side channel.
- */
+
+// TODO: Make sure String is the right data type
 public class VerifyServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Override

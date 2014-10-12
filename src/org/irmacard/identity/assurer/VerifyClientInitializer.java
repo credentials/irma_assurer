@@ -6,6 +6,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.ssl.SslContext;
+import org.irmacard.identity.common.MessageDecrypter;
+import org.irmacard.identity.common.MessageEncrypter;
 import org.irmacard.identity.common.PassportDataDecoder;
 import org.irmacard.identity.common.PassportDataEncoder;
 
@@ -31,6 +33,12 @@ public class VerifyClientInitializer extends ChannelInitializer<SocketChannel> {
         // Add the passport codecs
         pipeline.addLast(new PassportDataDecoder());
         pipeline.addLast(new PassportDataEncoder());
+
+        // Add cryptographic codecs
+        pipeline.addLast(new MessageDecrypter());
+        pipeline.addLast(new MessageEncrypter());
+
+        // TODO: Add some more codecs if necessary.
 
         // and then business logic.
         pipeline.addLast(new VerifyClientHandler());

@@ -78,7 +78,7 @@ public class PassportReader {
         return VerificationStatus.Verdict.SUCCEEDED;
     }
 
-    // TODO: Probably has to be moved to the server side, so it can sign immediately
+    // TODO: Probably has to be moved to the server side, so it can sign immediately. Use netty's Unpooled.copiedBuffer() to create ByteBuf and send?
     private void storePassportData() {
         try {
             LDS lds = passport.getLDS();
