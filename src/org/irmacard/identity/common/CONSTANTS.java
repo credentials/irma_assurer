@@ -30,4 +30,9 @@ public class CONSTANTS {
     // Delimiters for the various Data Groups on the Passport chip
     public static final int PASSPORT_DG1_OFFSET = 5;
     public static final int PASSPORT_DG1_LE = 250;
+
+
+    // TODO: Check this for correct types
+    public static final byte AUTH_REQUEST = 0x01;
+    public static final short DATA_LENGTH_OFFSET = 0x02;
 }

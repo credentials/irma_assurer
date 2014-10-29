@@ -6,10 +6,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.ssl.SslContext;
-import org.irmacard.identity.common.MessageDecrypter;
-import org.irmacard.identity.common.MessageEncrypter;
-import org.irmacard.identity.common.PassportDataDecoder;
-import org.irmacard.identity.common.PassportDataEncoder;
+import org.irmacard.identity.common.*;
 
 
 public class VerifyServerInitializer extends ChannelInitializer<SocketChannel> {
@@ -28,16 +25,20 @@ public class VerifyServerInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Enable stream compression (you can remove these two if unnecessary)
-        pipeline.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
-        pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+        // pipeline.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+        // pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+
+        // Convert Strings to Bytes and vice versa
+        pipeline.addLast(new MessageDecoder());
+        pipeline.addLast(new MessageEncoder());
 
         // Add the passport codecs
-        pipeline.addLast(new PassportDataDecoder());
-        pipeline.addLast(new PassportDataEncoder());
+        // pipeline.addLast(new PassportDataDecoder());
+        // pipeline.addLast(new PassportDataEncoder());
 
         // Add cryptographic codecs
-        pipeline.addLast(new MessageDecrypter());
-        pipeline.addLast(new MessageEncrypter());
+        // pipeline.addLast(new MessageDecrypter());
+        // pipeline.addLast(new MessageEncrypter());
 
         // TODO: Add some more codecs if necessary.
 

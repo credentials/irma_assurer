@@ -38,11 +38,15 @@ public class VerifyClient {
             // Make a new connection.
             ChannelFuture f = b.connect(HOST, PORT).sync();
 
+
+
             // Get the handler instance to retrieve the answer.
             VerifyClientHandler handler = (VerifyClientHandler) f.channel().pipeline().last();
 
             // Print out the answer.
             // System.err.format("Factorial of %,d is: %,d", COUNT, handler.getFactorial());
+
+            // handler.authenticate();
         } finally {
             group.shutdownGracefully();
         }

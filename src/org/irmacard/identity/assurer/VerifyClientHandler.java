@@ -1,25 +1,47 @@
 package org.irmacard.identity.assurer;
 
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-// TODO: Make sure String is the right data type
 public class VerifyClientHandler extends SimpleChannelInboundHandler<String> {
+    ChannelHandlerContext ctx;
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {
+        System.out.println("Channel has become active.");
+        this.ctx = ctx;
+
+        String command = "auth";
+        sendMessage(command);
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-
+        System.out.println("Incoming data: " + msg);
     }
 
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.printf("Channel has become inactive.");
-    }
+    protected void sendMessage(String command) {
+        ChannelFuture future;
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
-        ctx.close();
+        System.out.printf("Writing command '%s' to the channel.\n", command);
+        future = ctx.writeAndFlush(command);
+
+        System.out.println("Waiting for the operation to complete.");
+        assert future != null;
+        future.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                System.out.println("Operation complete.");
+                if (future.isSuccess()) {
+                    System.out.println("Message sent successfully.");
+                } else {
+                    future.cause().printStackTrace();
+                    future.channel().close();
+                }
+            }
+        });
     }
 }
