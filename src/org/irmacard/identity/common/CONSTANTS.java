@@ -8,31 +8,25 @@ package org.irmacard.identity.common;
  */
 public class CONSTANTS {
 
+    // TODO: Sanity check on values
+
     /** The buffer size. Given a random value for now. */
     public static final int BUFFER_SIZE = 256;
 
-    /** The tablet is not connected to the verification server. */
-    public static final byte CONNECTION_STATUS_DISCONNECTED = 0x00;
-    /** The tablet is connected to the verification server. */
-    public static final byte CONNECTION_STATUS_CONNECTED = 0x01;
+    public static final short CONNECTION_STATUS_CONNECTED = 0xCC;
+    public static final short CONNECTION_STATUS_DISCONNECTED = 0xCD;
 
-
-    public static final String INS_VERIFY_ID = "INS_VERIFY_ID";
-    public static final String INS_SIGN_CREDENTIALS = "INS_SIGN_CREDENTIALS";
-
-    public static final String EXIT = "EXIT";
-    public static final String ACK = "ACK";
-    public static final String OK = "OK";
-    public static final String ERROR = "ERROR";
-
-
+    public static final short INS_VERIFY_ID = 0x20;
+    public static final short INS_SIGN_CREDENTIALS = 0x21;
 
     // Delimiters for the various Data Groups on the Passport chip
     public static final int PASSPORT_DG1_OFFSET = 5;
     public static final int PASSPORT_DG1_LE = 250;
 
-
-    // TODO: Check this for correct types
-    public static final byte AUTH_REQUEST = 0x01;
+    public static final short AUTH_REQUEST = 0xA1;
     public static final short DATA_LENGTH_OFFSET = 0x02;
+
+    public static final short ACK = 0x01;
+    public static final short OK = 0x02;
+    public static final short ERROR = 0xFF;
 }

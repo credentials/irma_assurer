@@ -29,11 +29,11 @@ public class VerifyServerInitializer extends ChannelInitializer<SocketChannel> {
         // pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
 
         // Convert Strings to Bytes and vice versa
-        pipeline.addLast(new MessageDecoder());
-        pipeline.addLast(new MessageEncoder());
+        // pipeline.addLast(new MessageDecoder());
+        // pipeline.addLast(new MessageEncoder());
 
         // Add the passport codecs
-        // pipeline.addLast(new PassportDataDecoder());
+        pipeline.addLast(new PassportDataDecoder());
         // pipeline.addLast(new PassportDataEncoder());
 
         // Add cryptographic codecs

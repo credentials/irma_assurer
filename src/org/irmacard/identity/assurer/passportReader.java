@@ -128,6 +128,10 @@ public class PassportReader {
         }
     }
 
+    Passport getPassport () {
+        return passport;
+    }
+
     private void reset() {
         passport = null;
         bacStore.clear();

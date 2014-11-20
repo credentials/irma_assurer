@@ -6,6 +6,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 
 import java.nio.charset.Charset;
 
+// TODO: Skip this encoder altogether and just use PassportDataEncoder?
 public class MessageEncoder extends MessageToByteEncoder<String> {
     @Override
     protected void encode(ChannelHandlerContext ctx, String msg, ByteBuf out) throws Exception {

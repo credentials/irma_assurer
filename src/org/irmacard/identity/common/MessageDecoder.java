@@ -8,7 +8,7 @@ import io.netty.handler.codec.CorruptedFrameException;
 import java.math.BigInteger;
 import java.util.List;
 
-
+// TODO: Skip this decoder altogether and just use PassportDataDecoder?
 public class MessageDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {

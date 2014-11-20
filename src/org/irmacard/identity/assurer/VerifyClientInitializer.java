@@ -27,8 +27,8 @@ public class VerifyClientInitializer extends ChannelInitializer<SocketChannel> {
         // pipeline.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
         // pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
 
-        pipeline.addLast(new MessageDecoder());
-        pipeline.addLast(new MessageEncoder());
+        // pipeline.addLast(new MessageDecoder());
+        // pipeline.addLast(new MessageEncoder());
 
         // Add the passport codecs
         // pipeline.addLast(new PassportDataDecoder());
