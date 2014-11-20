@@ -55,6 +55,8 @@ public class Tablet {
      * This is the backbone of the tablet's functionality. This method determines which actions to perform.
      */
     private void start() {
+
+        // FIXME: Determine whether this is obsolete in the new client-server setup
         System.out.printf("Using terminal '%s'\n", terminalCardService.getTerminal());
         System.out.println("Please keep your card or identity document against the terminal.");
         System.out.printf("Is this an IRMA card (%d) or an identity document (%d)? ", CHIP_TYPE_IRMA, CHIP_TYPE_EID);
