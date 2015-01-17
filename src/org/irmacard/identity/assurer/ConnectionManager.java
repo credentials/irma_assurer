@@ -48,7 +48,7 @@ public class ConnectionManager {
      * Inner Connection class to make sure only the Connection Manager can set it up
      */
     private class Connection {
-        private byte CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
+        private short CONNECTION_STATUS = CONSTANTS.CONNECTION_STATUS_DISCONNECTED;
         private SSLSocket sslSocket = null;
 
         private Connection(String hostname, int port) {
