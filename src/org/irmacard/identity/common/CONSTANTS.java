@@ -29,4 +29,5 @@ public class CONSTANTS {
     public static final short ACK = 0x01;
     public static final short OK = 0x02;
     public static final short ERROR = 0xFF;
+    public static final int CHUNK_SIZE = 1024;
 }
