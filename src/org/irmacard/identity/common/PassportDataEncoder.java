@@ -10,22 +10,26 @@ import net.sourceforge.scuba.util.Hex;
 import org.jmrtd.Passport;
 import org.jmrtd.lds.LDS;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.Format;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class PassportDataEncoder extends MessageToByteEncoder {
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+        // TODO: Output a File object for use with ChunkedStream and ChunkedWriteHandler instead of ByteBuf?
+        // TODO: Change type of msg to Passport and remove this check
         if (msg instanceof Passport) {
             Passport passport = (Passport) msg;
 
             System.out.printf("Creating streams.\n");
             InputStream input;
-            ByteBuf buffer = Unpooled.buffer();
-            OutputStream output = new ByteBufOutputStream(buffer);
+            ByteBuf buffer = ctx.alloc().ioBuffer();
+            FileOutputStream output = new FileOutputStream("passportdata");
             ZipOutputStream zipOut = new ZipOutputStream(output);
 
             LDS source = passport.getLDS();
@@ -38,7 +42,7 @@ public class PassportDataEncoder extends MessageToByteEncoder {
 
                     System.out.printf("Converting %s.\n", entryName);
 
-                    int bytesRead = 0;
+                    int bytesRead;
                     byte[] dgBytes = new byte[CONSTANTS.CHUNK_SIZE];
 
                     System.out.printf("Starting read from datagroup %s.\n", fileID.byteValue());
@@ -47,6 +51,7 @@ public class PassportDataEncoder extends MessageToByteEncoder {
                         System.out.printf("Read %d bytes from the input stream.\n", bytesRead);
                         zipOut.write(dgBytes, 0, bytesRead);
                         System.out.printf("Bytes written to output stream.\n");
+                        System.out.printf("dgBytes now contains: %s\n", Formatter.toHexString(dgBytes));
                     }
 
                     System.out.printf("Closing zip entry and proceeding with next datagroup.\n");
@@ -62,7 +67,6 @@ public class PassportDataEncoder extends MessageToByteEncoder {
             zipOut.close();
             output.flush();
             output.close();
-            System.out.printf("Buffer can contain %d bytes.\n", buffer.capacity());
 
             out.writeBytes(buffer);
         } else {
